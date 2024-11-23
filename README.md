@@ -1,2 +1,45 @@
 # boilerplate-scorepad
- Boilerplate Scorepad es un repositorio base en React para crear contadores de puntos para juegos de mesa, reemplazando las hojas de papel con una solución digital práctica y sostenible. Su diseño escalable y adaptable permite personalizar contadores según el juego y facilitando una gestión de puntajes más eficiente y ecológica.
+
+ Boilerplate Scorepad is a React-based repository designed to create score trackers for board games, replacing paper sheets with a practical and sustainable digital solution. Its scalable and adaptable design allows for customizing trackers based on the game, making score management more efficient and eco-friendly.
+
+## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+
+- Configure the top-level `parserOptions` property like this:
+
+```js
+export default tseslint.config({
+  languageOptions: {
+    // other options...
+    parserOptions: {
+      project: ['./tsconfig.node.json', './tsconfig.app.json'],
+      tsconfigRootDir: import.meta.dirname,
+    },
+  },
+})
+```
+
+- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
+- Optionally add `...tseslint.configs.stylisticTypeChecked`
+- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+
+```js
+// eslint.config.js
+import react from 'eslint-plugin-react'
+
+export default tseslint.config({
+  // Set the react version
+  settings: { react: { version: '18.3' } },
+  plugins: {
+    // Add the react plugin
+    react,
+  },
+  rules: {
+    // other rules...
+    // Enable its recommended rules
+    ...react.configs.recommended.rules,
+    ...react.configs['jsx-runtime'].rules,
+  },
+})
+```
