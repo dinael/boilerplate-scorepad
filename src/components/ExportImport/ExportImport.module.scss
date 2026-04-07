@@ -1,0 +1,35 @@
+.exportImport {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: 1px solid #666;
+  background: transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #eee;
+  }
+}
+
+.fileInput {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .btn {
+    border-color: #888;
+    color: #fff;
+
+    &:hover {
+      background: #333;
+    }
+  }
+}

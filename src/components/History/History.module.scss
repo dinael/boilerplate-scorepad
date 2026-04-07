@@ -1,0 +1,168 @@
+.history {
+  background: var(--color-background, #f5f5f5);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.title {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.empty {
+  color: #666;
+  font-size: 0.875rem;
+  text-align: center;
+  padding: 1rem;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+  background: white;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.winner {
+  font-weight: 600;
+  color: #222;
+}
+
+.points {
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.date {
+  color: #888;
+  font-size: 0.75rem;
+}
+
+.players {
+  color: #666;
+  font-size: 0.75rem;
+  width: 100%;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.clearBtn {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  background: transparent;
+  border: 1px solid #999;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #666;
+
+  &:hover {
+    background: #eee;
+  }
+}
+
+.loadBtn,
+.deleteBtn {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.loadBtn {
+  background: #4a90d9;
+  color: white;
+  border: none;
+
+  &:hover {
+    background: #3a7bc8;
+  }
+}
+
+.deleteBtn {
+  background: transparent;
+  border: 1px solid #dc3545;
+  color: #dc3545;
+
+  &:hover {
+    background: #dc3545;
+    color: white;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .history {
+    background: #2a2a2a;
+  }
+
+  .title {
+    color: #eee;
+  }
+
+  .empty {
+    color: #aaa;
+  }
+
+  .item {
+    background: #333;
+    border-color: #444;
+  }
+
+  .winner {
+    color: #fff;
+  }
+
+  .points,
+  .players {
+    color: #aaa;
+  }
+
+  .date {
+    color: #888;
+  }
+
+  .clearBtn {
+    color: #aaa;
+    border-color: #666;
+
+    &:hover {
+      background: #444;
+    }
+  }
+
+  .deleteBtn {
+    &:hover {
+      background: #dc3545;
+    }
+  }
+}

@@ -22,6 +22,16 @@ export type GameConfig = {
   messages: GameMessages;
 };
 
+export type GameHistoryItem = {
+  id: string;
+  date: string;
+  winner: string;
+  points: number;
+  players: string[];
+  config: GameConfig;
+  columns: Column[];
+};
+
 export const defaultConfig: GameConfig = {
   rounds: 3,
   gameType: "highest",
@@ -75,4 +85,5 @@ export type GameAction =
   | { type: "FINISH_GAME" }
   | { type: "NEW_GAME" }
   | { type: "LOAD_STATE"; payload: GameState }
-  | { type: "UPDATE_CONFIG"; payload: Partial<GameConfig> };
+  | { type: "UPDATE_CONFIG"; payload: Partial<GameConfig> }
+  | { type: "SET_CONFIG"; payload: GameConfig };

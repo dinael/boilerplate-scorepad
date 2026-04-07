@@ -4,10 +4,16 @@ import ColumnComponent from "../ColumnComponent/ColumnComponent";
 import GameControls, { GameControlsRef } from "../GameControls/GameControls";
 import GameResults from "../GameResults/GameResults";
 import Settings from "../Settings/Settings";
-import { Input, GameState, GameAction, GameConfig, defaultConfig, Column } from "../../types";
+import ExportImport from "../ExportImport/ExportImport";
+import Presets from "../Presets/Presets";
+import History from "../History/History";
+import UndoRedo from "../UndoRedo/UndoRedo";
+import { Input, GameState, GameAction, GameConfig, defaultConfig, Column, GameHistoryItem } from "../../types";
 
 const STORAGE_KEY = "scorepad-game-state";
 const CONFIG_KEY = "scorepad-game-config";
+const HISTORY_KEY = "scorepad-game-history";
+const MAX_HISTORY = 50;
 
 const createInitialColumns = (config: GameConfig): Column[] => [
   {
@@ -66,6 +72,35 @@ const getInitialConfig = (): GameConfig => {
     }
   }
   return defaultConfig;
+};
+
+const getHistory = (): GameHistoryItem[] => {
+  const stored = localStorage.getItem(HISTORY_KEY);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch {
+      console.warn("Failed to parse history");
+    }
+  }
+  return [];
+};
+
+const saveToHistory = (state: GameState, config: GameConfig) => {
+  if (state.finished && state.columns.length > 0) {
+    const history = getHistory();
+    const newItem: GameHistoryItem = {
+      id: Date.now().toString(),
+      date: new Date().toISOString(),
+      winner: state.winner,
+      points: state.pointsWinner,
+      players: state.columns.map(c => c.name),
+      config,
+      columns: state.columns,
+    };
+    const updatedHistory = [newItem, ...history].slice(0, MAX_HISTORY);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(updatedHistory));
+  }
 };
 
 const calculatePoints = (inputs: Input[]): number =>
@@ -208,6 +243,9 @@ const PointsCalculator: FC = () => {
   const lastSavedConfig = useRef<string>("");
 
   const [showSettings, setShowSettings] = useState(false);
+  const [history, setHistory] = useState<GameHistoryItem[]>(getHistory);
+  const [undoStack, setUndoStack] = useState<GameState[]>([]);
+  const [redoStack, setRedoStack] = useState<GameState[]>([]);
 
   useEffect(() => {
     const stateString = JSON.stringify(state);
@@ -231,31 +269,46 @@ const PointsCalculator: FC = () => {
     }
   }, [state.finished]);
 
+  useEffect(() => {
+    if (state.finished) {
+      saveToHistory(state, config);
+      setHistory(getHistory());
+    }
+  }, [state.finished]);
+
   const handleConfigChange = useCallback((newConfig: Partial<GameConfig>) => {
     configDispatch({ type: "UPDATE", payload: newConfig });
   }, []);
 
   const handleChangeName = useCallback((id: number, name: string) => {
+    setUndoStack(prev => [...prev, state]);
+    setRedoStack([]);
     dispatch({ type: "CHANGE_NAME", payload: { id, name } });
-  }, []);
+  }, [state]);
 
   const handleChangePoints = useCallback(
     (columnId: number, inputId: number, value: number) => {
+      setUndoStack(prev => [...prev, state]);
+      setRedoStack([]);
       dispatch({
         type: "CHANGE_POINTS",
         payload: { columnId, inputId, value },
       });
     },
-    []
+    [state]
   );
 
   const handleAddColumn = useCallback(() => {
+    setUndoStack(prev => [...prev, state]);
+    setRedoStack([]);
     dispatch({ type: "ADD_COLUMN" });
-  }, []);
+  }, [state]);
 
   const handleRemoveColumn = useCallback((id: number) => {
+    setUndoStack(prev => [...prev, state]);
+    setRedoStack([]);
     dispatch({ type: "REMOVE_COLUMN", payload: { id } });
-  }, []);
+  }, [state]);
 
   const handleFinished = useCallback(() => {
     dispatch({ type: "FINISH_GAME" });
@@ -266,6 +319,64 @@ const PointsCalculator: FC = () => {
       controlsRef.current.focus();
     }
     dispatch({ type: "NEW_GAME" });
+    setUndoStack([]);
+    setRedoStack([]);
+  }, []);
+
+  const handleUndo = useCallback(() => {
+    if (undoStack.length === 0) return;
+    const previousState = undoStack[undoStack.length - 1];
+    setRedoStack(prev => [...prev, state]);
+    setUndoStack(prev => prev.slice(0, -1));
+    dispatch({ type: "LOAD_STATE", payload: previousState });
+  }, [undoStack, state]);
+
+  const handleRedo = useCallback(() => {
+    if (redoStack.length === 0) return;
+    const nextState = redoStack[redoStack.length - 1];
+    setUndoStack(prev => [...prev, state]);
+    setRedoStack(prev => prev.slice(0, -1));
+    dispatch({ type: "LOAD_STATE", payload: nextState });
+  }, [redoStack, state]);
+
+  const handlePresetSelect = useCallback((presetConfig: Partial<GameConfig>) => {
+    configDispatch({ type: "UPDATE", payload: presetConfig });
+    dispatch({ type: "NEW_GAME" });
+    setUndoStack([]);
+    setRedoStack([]);
+  }, []);
+
+  const handleImport = useCallback((data: { config: GameConfig }) => {
+    configDispatch({ type: "SET_CONFIG", payload: data.config });
+    dispatch({ type: "NEW_GAME" });
+    setUndoStack([]);
+    setRedoStack([]);
+  }, []);
+
+  const handleHistoryLoad = useCallback((item: GameHistoryItem) => {
+    configDispatch({ type: "SET_CONFIG", payload: item.config });
+    const loadedState: GameState = {
+      columns: item.columns,
+      finished: false,
+      winner: "",
+      pointsWinner: 0,
+      tied: [],
+      otherColumns: [],
+    };
+    dispatch({ type: "LOAD_STATE", payload: loadedState });
+    setUndoStack([]);
+    setRedoStack([]);
+  }, []);
+
+  const handleHistoryDelete = useCallback((id: string) => {
+    const newHistory = history.filter(h => h.id !== id);
+    setHistory(newHistory);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
+  }, [history]);
+
+  const handleHistoryClear = useCallback(() => {
+    setHistory([]);
+    localStorage.removeItem(HISTORY_KEY);
   }, []);
 
   const allZeros = useMemo(
@@ -296,18 +407,28 @@ const PointsCalculator: FC = () => {
 
   return (
     <div className={styles.container}>
-      <button 
-        onClick={() => setShowSettings(!showSettings)}
-        className={styles.settings_toggle}
-        aria-expanded={showSettings}
-        aria-controls="settings-panel"
-      >
-        {showSettings ? "Hide Settings" : "Show Settings"}
-      </button>
+      <div className={styles.toolbar}>
+        <UndoRedo
+          canUndo={undoStack.length > 0}
+          canRedo={redoStack.length > 0}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+        />
+        <button 
+          onClick={() => setShowSettings(!showSettings)}
+          className={styles.settings_toggle}
+          aria-expanded={showSettings}
+          aria-controls="settings-panel"
+        >
+          {showSettings ? "Hide Settings" : "Show Settings"}
+        </button>
+      </div>
       
       {showSettings && (
         <div id="settings-panel">
           <Settings config={config} onConfigChange={handleConfigChange} />
+          <Presets onSelect={handlePresetSelect} currentConfig={config} />
+          <ExportImport config={config} onImport={handleImport} />
         </div>
       )}
       
@@ -344,6 +465,12 @@ const PointsCalculator: FC = () => {
           />
         </div>
       )}
+      <History
+        history={history}
+        onLoad={handleHistoryLoad}
+        onDelete={handleHistoryDelete}
+        onClear={handleHistoryClear}
+      />
     </div>
   );
 };

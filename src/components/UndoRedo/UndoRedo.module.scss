@@ -1,0 +1,36 @@
+.undoRedo {
+  display: flex;
+  gap: 8px;
+  margin-right: auto;
+}
+
+.btn {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    background: #f0f0f0;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .btn {
+    background: #333;
+    border-color: #555;
+    color: #fff;
+
+    &:hover:not(:disabled) {
+      background: #444;
+    }
+  }
+}
