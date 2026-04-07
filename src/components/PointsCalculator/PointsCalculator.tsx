@@ -5,7 +5,6 @@ import GameControls, { GameControlsRef } from "../GameControls/GameControls";
 import GameResults from "../GameResults/GameResults";
 import Settings from "../Settings/Settings";
 import ExportImport from "../ExportImport/ExportImport";
-import Presets from "../Presets/Presets";
 import History from "../History/History";
 import UndoRedo from "../UndoRedo/UndoRedo";
 import { Input, GameState, GameAction, GameConfig, defaultConfig, Column, GameHistoryItem } from "../../types";
@@ -339,13 +338,6 @@ const PointsCalculator: FC = () => {
     dispatch({ type: "LOAD_STATE", payload: nextState });
   }, [redoStack, state]);
 
-  const handlePresetSelect = useCallback((presetConfig: Partial<GameConfig>) => {
-    configDispatch({ type: "UPDATE", payload: presetConfig });
-    dispatch({ type: "NEW_GAME" });
-    setUndoStack([]);
-    setRedoStack([]);
-  }, []);
-
   const handleImport = useCallback((data: { config: GameConfig }) => {
     configDispatch({ type: "SET_CONFIG", payload: data.config });
     dispatch({ type: "NEW_GAME" });
@@ -427,7 +419,6 @@ const PointsCalculator: FC = () => {
       {showSettings && (
         <div id="settings-panel">
           <Settings config={config} onConfigChange={handleConfigChange} />
-          <Presets onSelect={handlePresetSelect} currentConfig={config} />
           <ExportImport config={config} onImport={handleImport} />
         </div>
       )}

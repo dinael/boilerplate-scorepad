@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, fireEvent, screen } from "@testing-library/react";
 import PointsCalculator from "../PointsCalculator";
+import React from "react";
 
 describe("PointsCalculator", () => {
   it("renders initial state correctly", () => {
