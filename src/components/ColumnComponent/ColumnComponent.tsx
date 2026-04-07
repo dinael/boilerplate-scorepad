@@ -1,21 +1,37 @@
-import React, { FC, memo } from "react";
-import { Column } from "./types";
+import React, { FC, memo, useId } from "react";
+import { Column, GameConfig } from "../../types";
+import styles from "./ColumnComponent.module.scss";
 
-export type InputFieldProps ={
+export type InputFieldProps = {
   value: number;
   onChange: (value: number) => void;
   readOnly: boolean;
-}
+  label: string;
+  inputId: string;
+};
 
 const InputField: FC<InputFieldProps> = memo(
-  ({ value, onChange, readOnly }) => (
-    <input
-      type="number"
-      value={value}
-      onChange={(e) => onChange(parseInt(e.target.value, 10) || 0)}
-      className=""
-      readOnly={readOnly}
-    />
+  ({ value, onChange, readOnly, label, inputId }) => (
+    <div className={styles.input_wrapper}>
+      <label htmlFor={inputId} className="visually-hidden">
+        {label}
+      </label>
+      <input
+        type="number"
+        id={inputId}
+        value={value}
+        min={0}
+        onChange={(e) => {
+          const val = parseInt(e.target.value, 10);
+          if (!isNaN(val) && val >= 0) {
+            onChange(val);
+          }
+        }}
+        className={styles.column__points_input}
+        readOnly={readOnly}
+        aria-label={label}
+      />
+    </div>
   )
 );
 
@@ -25,36 +41,64 @@ interface ColumnComponentProps {
   onChangeName: (id: number, name: string) => void;
   onChangePoints: (columnId: number, inputId: number, value: number) => void;
   onRemoveColumn: (id: number) => void;
+  config: GameConfig;
 }
 
 export const ColumnComponent: FC<ColumnComponentProps> = memo(
-  ({ column, finished, onChangeName, onChangePoints, onRemoveColumn }) => (
-    <div key={column.id} className="">
-      <input
-        type="text"
-        value={column.name}
-        onChange={(e) => onChangeName(column.id, e.target.value)}
-        className=""
-        readOnly={finished}
-      />
-      {column.inputs.map((input) => (
-        <InputField
-          key={input.id}
-          value={input.value}
-          onChange={(value) => onChangePoints(column.id, input.id, value)}
-          readOnly={finished}
-        />
-      ))}
-      <p className="">Points: {column.points}</p>
-      <button
-        onClick={() => onRemoveColumn(column.id)}
-        className=""
-        disabled={finished}
+  ({ column, finished, onChangeName, onChangePoints, onRemoveColumn, config }) => {
+    const nameInputId = useId();
+    
+    return (
+      <div 
+        key={column.id} 
+        className={styles.column} 
+        role="region" 
+        aria-labelledby={`${nameInputId}-label`}
       >
-        Delete
-      </button>
-    </div>
-  )
+        <label 
+          htmlFor={nameInputId} 
+          id={`${nameInputId}-label`}
+          className="visually-hidden"
+        >
+          {column.name} {config.messages.columnLabel}
+        </label>
+        <input
+          id={nameInputId}
+          type="text"
+          value={column.name}
+          onChange={(e) => onChangeName(column.id, e.target.value)}
+          className={styles.column__name_input}
+          readOnly={finished}
+          aria-label={`${column.name} ${config.messages.playerName}`}
+        />
+        {column.inputs.map((_, index) => (
+          <InputField
+            key={index}
+            inputId={`${column.id}-input-${index}`}
+            value={column.inputs[index]?.value ?? 0}
+            onChange={(value) => onChangePoints(column.id, index + 1, value)}
+            readOnly={finished}
+            label={`${config.messages.round} ${index + 1} ${config.messages.points} for ${column.name}`}
+          />
+        ))}
+        <p 
+          className={styles.column__points_display} 
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {config.messages.points}: {column.points}
+        </p>
+        <button
+          onClick={() => onRemoveColumn(column.id)}
+          className={styles.column__delete_btn}
+          disabled={finished}
+          aria-label={`${config.messages.deleteColumn} ${column.name}`}
+        >
+          {config.messages.deleteColumn}
+        </button>
+      </div>
+    );
+  }
 );
 
 export default ColumnComponent;

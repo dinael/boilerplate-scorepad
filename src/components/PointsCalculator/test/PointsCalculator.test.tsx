@@ -1,34 +1,34 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { render, fireEvent, screen } from "@testing-library/react";
 import PointsCalculator from "../PointsCalculator";
 
 describe("PointsCalculator", () => {
   it("renders initial state correctly", () => {
     render(<PointsCalculator />);
-    expect(screen.getByText("Column 1")).toBeInTheDocument();
-    expect(screen.getByText("Puntos: 0")).toBeInTheDocument();
-    expect(screen.getByText("Agregar columna")).toBeInTheDocument();
-    expect(screen.getByText("Finalizar")).toBeInTheDocument();
-    expect(screen.getByText("Nueva partida")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Player 1")).toBeInTheDocument();
+    expect(screen.getByText("Points: 0")).toBeInTheDocument();
+    expect(screen.getByText("Add column")).toBeInTheDocument();
+    expect(screen.getByText("Finished")).toBeInTheDocument();
+    expect(screen.getByText("New game")).toBeInTheDocument();
   });
 
-  it('adds a new column when "Agregar columna" is clicked', () => {
+  it('adds a new column when "Add column" is clicked', () => {
     render(<PointsCalculator />);
-    fireEvent.click(screen.getByText("Agregar columna"));
-    expect(screen.getByText("Column 2")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Add column"));
+    expect(screen.getByDisplayValue("Player 2")).toBeInTheDocument();
   });
 
-  it('removes a column when "Eliminar" is clicked', () => {
+  it('removes a column when "Delete column" is clicked', () => {
     render(<PointsCalculator />);
-    fireEvent.click(screen.getByText("Agregar columna"));
-    const removeButtons = screen.getAllByText("Eliminar");
-    fireEvent.click(removeButtons[1]); // Remove the second column
-    expect(screen.queryByText("Column 2")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText("Add column"));
+    const deleteButtons = screen.getAllByText("Delete column");
+    fireEvent.click(deleteButtons[1]);
+    expect(screen.queryByDisplayValue("Player 2")).not.toBeInTheDocument();
   });
 
   it("updates column name when input changes", () => {
     render(<PointsCalculator />);
-    const nameInput = screen.getByDisplayValue("Column 1");
+    const nameInput = screen.getByDisplayValue("Player 1");
     fireEvent.change(nameInput, { target: { value: "New Name" } });
     expect(screen.getByDisplayValue("New Name")).toBeInTheDocument();
   });
@@ -37,34 +37,34 @@ describe("PointsCalculator", () => {
     render(<PointsCalculator />);
     const pointInputs = screen.getAllByRole("spinbutton");
     fireEvent.change(pointInputs[0], { target: { value: "5" } });
-    expect(screen.getByText("Puntos: 5")).toBeInTheDocument();
+    expect(screen.getByText("Points: 5")).toBeInTheDocument();
   });
 
   it("finishes the game and displays winner", () => {
     render(<PointsCalculator />);
     const pointInputs = screen.getAllByRole("spinbutton");
     fireEvent.change(pointInputs[0], { target: { value: "5" } });
-    fireEvent.click(screen.getByText("Finalizar"));
-    expect(screen.getByText("Column 1 - 5 puntos")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Finished"));
+    expect(screen.getByText(/Player 1 - 5 Points/)).toBeInTheDocument();
   });
 
   it("handles tie correctly", () => {
     render(<PointsCalculator />);
-    fireEvent.click(screen.getByText("Agregar columna"));
+    fireEvent.click(screen.getByText("Add column"));
     const pointInputs = screen.getAllByRole("spinbutton");
     fireEvent.change(pointInputs[0], { target: { value: "5" } });
     fireEvent.change(pointInputs[3], { target: { value: "5" } });
-    fireEvent.click(screen.getByText("Finalizar"));
-    expect(screen.getByText("¡Oh! Ha habido un empate!")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Finished"));
+    expect(screen.getByText(/Tie - 5 Points/)).toBeInTheDocument();
   });
 
-  it('starts a new game when "Nueva partida" is clicked', () => {
+  it('starts a new game when "New game" is clicked', () => {
     render(<PointsCalculator />);
     const pointInputs = screen.getAllByRole("spinbutton");
     fireEvent.change(pointInputs[0], { target: { value: "5" } });
-    fireEvent.click(screen.getByText("Finalizar"));
-    fireEvent.click(screen.getByText("Nueva partida"));
-    expect(screen.getByText("Puntos: 0")).toBeInTheDocument();
-    expect(screen.queryByText("Column 1 - 5 puntos")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText("Finished"));
+    fireEvent.click(screen.getByText("New game"));
+    expect(screen.getByText("Points: 0")).toBeInTheDocument();
+    expect(screen.queryByText("Player 1 - 5 points")).not.toBeInTheDocument();
   });
 });
