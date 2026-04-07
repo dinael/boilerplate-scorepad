@@ -1,0 +1,65 @@
+.settings {
+  background: var(--color-background, #f5f5f5);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+
+  &__title {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  &__field {
+    margin-bottom: 0.75rem;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__label {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+  }
+
+  &__input,
+  &__select {
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+    background: white;
+  }
+
+  &__messages {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 0.75rem;
+    margin-top: 1rem;
+
+    legend {
+      font-weight: 600;
+      padding: 0 0.5rem;
+    }
+
+    .settings__field {
+      margin-bottom: 0.5rem;
+    }
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .settings {
+    background: #2a2a2a;
+
+    &__input,
+    &__select {
+      background: #333;
+      border-color: #555;
+      color: #fff;
+    }
+
+    &__messages {
+      border-color: #444;
+    }
+  }
+}

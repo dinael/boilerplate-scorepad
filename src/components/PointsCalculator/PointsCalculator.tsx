@@ -1,49 +1,71 @@
-import { FC, useCallback, useMemo, useReducer } from "react";
+import { FC, useCallback, useMemo, useReducer, useEffect, useRef, useState } from "react";
 import styles from "./PointCalculator.module.scss";
 import ColumnComponent from "../ColumnComponent/ColumnComponent";
-import GameControls from "../GameControls/GameControls";
+import GameControls, { GameControlsRef } from "../GameControls/GameControls";
 import GameResults from "../GameResults/GameResults";
-import { Column, Input } from "./types";
+import Settings from "../Settings/Settings";
+import { Input, GameState, GameAction, GameConfig, defaultConfig, Column } from "../../types";
 
-type GameState = {
-  columns: Column[];
-  finished: boolean;
-  winner: string;
-  pointsWinner: number;
-  tied: Column[];
-  otherColumns: Column[];
+const STORAGE_KEY = "scorepad-game-state";
+const CONFIG_KEY = "scorepad-game-config";
+
+const createInitialColumns = (config: GameConfig): Column[] => [
+  {
+    id: 1,
+    name: `${config.defaultPlayerName} 1`,
+    points: 0,
+    inputs: Array.from({ length: config.rounds }, (_, i) => ({
+      id: i + 1,
+      value: 0,
+    })),
+  },
+];
+
+const getInitialState = (config: GameConfig): GameState => {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      const inputs = Array.from({ length: config.rounds }, (_, i) => ({
+        id: i + 1,
+        value: 0,
+      }));
+      return {
+        ...parsed,
+        columns: parsed.columns.map((col: Column) => ({
+          ...col,
+          inputs: col.inputs.length === config.rounds 
+            ? col.inputs 
+            : inputs.map((input, i) => ({
+                ...input,
+                value: col.inputs[i]?.value ?? 0,
+              })),
+        })),
+      };
+    } catch {
+      console.warn("Failed to parse stored game state");
+    }
+  }
+  return {
+    columns: createInitialColumns(config),
+    finished: false,
+    winner: "",
+    pointsWinner: 0,
+    tied: [],
+    otherColumns: [],
+  };
 };
 
-type GameAction =
-  | { type: "UPDATE_COLUMN"; payload: { id: number; updates: Partial<Column> } }
-  | { type: "CHANGE_NAME"; payload: { id: number; name: string } }
-  | {
-      type: "CHANGE_POINTS";
-      payload: { columnId: number; inputId: number; value: number };
+const getInitialConfig = (): GameConfig => {
+  const stored = localStorage.getItem(CONFIG_KEY);
+  if (stored) {
+    try {
+      return { ...defaultConfig, ...JSON.parse(stored) };
+    } catch {
+      console.warn("Failed to parse stored config");
     }
-  | { type: "ADD_COLUMN" }
-  | { type: "REMOVE_COLUMN"; payload: { id: number } }
-  | { type: "FINISH_GAME" }
-  | { type: "NEW_GAME" };
-
-const initialState: GameState = {
-  columns: [
-    {
-      id: 1,
-      name: "Player 1",
-      points: 0,
-      inputs: [
-        { id: 1, value: 0 },
-        { id: 2, value: 0 },
-        { id: 3, value: 0 },
-      ],
-    },
-  ],
-  finished: false,
-  winner: "",
-  pointsWinner: 0,
-  tied: [],
-  otherColumns: [],
+  }
+  return defaultConfig;
 };
 
 const calculatePoints = (inputs: Input[]): number =>
@@ -52,102 +74,166 @@ const calculatePoints = (inputs: Input[]): number =>
     0
   );
 
-const gameReducer = (state: GameState, action: GameAction): GameState => {
-  const actions = {
-    UPDATE_COLUMN: () => ({
-      ...state,
-      columns: state.columns.map((column) =>
-        column.id === action.payload.id
-          ? { ...column, ...action.payload.updates }
-          : column
-      ),
-    }),
-    CHANGE_NAME: () => ({
-      ...state,
-      columns: state.columns.map((column) =>
-        column.id === action.payload.id
-          ? { ...column, name: action.payload.name }
-          : column
-      ),
-    }),
-    CHANGE_POINTS: () => ({
-      ...state,
-      columns: state.columns.map((column) =>
-        column.id === action.payload.columnId
-          ? {
-              ...column,
-              inputs: column.inputs.map((input) =>
-                input.id === action.payload.inputId
-                  ? { ...input, value: action.payload.value }
-                  : input
-              ),
-              points: calculatePoints(
-                column.inputs.map((input) =>
+const createGameReducer = (config: GameConfig) => (state: GameState, action: GameAction): GameState => {
+  switch (action.type) {
+    case "LOAD_STATE":
+      return action.payload;
+
+    case "UPDATE_COLUMN":
+      return {
+        ...state,
+        columns: state.columns.map((column) =>
+          column.id === action.payload.id
+            ? { ...column, ...action.payload.updates }
+            : column
+        ),
+      };
+
+    case "CHANGE_NAME":
+      return {
+        ...state,
+        columns: state.columns.map((column) =>
+          column.id === action.payload.id
+            ? { ...column, name: action.payload.name }
+            : column
+        ),
+      };
+
+    case "CHANGE_POINTS":
+      return {
+        ...state,
+        columns: state.columns.map((column) =>
+          column.id === action.payload.columnId
+            ? {
+                ...column,
+                inputs: column.inputs.map((input) =>
                   input.id === action.payload.inputId
                     ? { ...input, value: action.payload.value }
                     : input
-                )
-              ),
-            }
-          : column
-      ),
-    }),
-    ADD_COLUMN: () => ({
-      ...state,
-      columns: [
-        ...state.columns,
-        {
-          id: state.columns.length + 1,
-          name: `Player ${state.columns.length + 1}`,
-          points: 0,
-          inputs: [
-            { id: 1, value: 0 },
-            { id: 2, value: 0 },
-            { id: 3, value: 0 },
-          ],
-        },
-      ],
-    }),
-    REMOVE_COLUMN: () => ({
-      ...state,
-      columns: state.columns.filter(
-        (column) => column.id !== action.payload.id
-      ),
-    }),
-    FINISH_GAME: () => {
-      const sortedColumns = [...state.columns].sort((a, b) => b.points - a.points);
-      const maxPoints = sortedColumns[0]?.points ?? 0;
-      const tiedColumns = sortedColumns.filter((column) => column.points === maxPoints);
-      const isTie = tiedColumns.length > 1;
+                ),
+                points: calculatePoints(
+                  column.inputs.map((input) =>
+                    input.id === action.payload.inputId
+                      ? { ...input, value: action.payload.value }
+                      : input
+                  )
+                ),
+              }
+            : column
+        ),
+      };
+
+    case "ADD_COLUMN":
+      return {
+        ...state,
+        columns: [
+          ...state.columns,
+          {
+            id: state.columns.length + 1,
+            name: `${config.defaultPlayerName} ${state.columns.length + 1}`,
+            points: 0,
+            inputs: Array.from({ length: config.rounds }, (_, i) => ({
+              id: i + 1,
+              value: 0,
+            })),
+          },
+        ],
+      };
+
+    case "REMOVE_COLUMN":
+      return {
+        ...state,
+        columns: state.columns.filter(
+          (column) => column.id !== action.payload.id
+        ),
+      };
+
+    case "FINISH_GAME": {
+      const sortedColumns = [...state.columns].sort((a, b) => 
+        config.gameType === "highest" ? b.points - a.points : a.points - b.points
+      );
+      const winningPoints = sortedColumns[0]?.points ?? 0;
+      const winners = sortedColumns.filter((column) => column.points === winningPoints);
+      const isTie = winners.length > 1;
       return {
         ...state,
         finished: true,
-        winner: isTie ? "Oh! There has been a tie" : tiedColumns[0]?.name ?? "",
-        pointsWinner: tiedColumns[0]?.points ?? 0,
-        tied: isTie ? tiedColumns : [],
-        otherColumns: sortedColumns.filter((column) => !tiedColumns.includes(column)),
+        winner: isTie ? config.messages.tie : winners[0]?.name ?? "",
+        pointsWinner: winners[0]?.points ?? 0,
+        tied: isTie ? winners : [],
+        otherColumns: sortedColumns.filter((column) => !winners.includes(column)),
       };
-    },
-    NEW_GAME: () => ({
-      ...state,
-      columns: state.columns.map((column) => ({
-        ...column,
-        points: 0,
-        inputs: column.inputs.map((input) => ({ ...input, value: 0 })),
-      })),
-      finished: false,
-      winner: "",
-      pointsWinner: 0,
-      tied: [],
-      otherColumns: [],
-    }),
-  };
+    }
 
-  return actions[action.type]?.() ?? state;
+    case "NEW_GAME":
+      return {
+        ...state,
+        columns: state.columns.map((column) => ({
+          ...column,
+          points: 0,
+          inputs: column.inputs.map((input) => ({ ...input, value: 0 })),
+        })),
+        finished: false,
+        winner: "",
+        pointsWinner: 0,
+        tied: [],
+        otherColumns: [],
+      };
+
+    default:
+      return state;
+  }
+};
+
+type ConfigAction = { type: "SET_CONFIG"; payload: GameConfig } | { type: "UPDATE"; payload: Partial<GameConfig> };
+
+const configReducer = (state: GameConfig, action: ConfigAction): GameConfig => {
+  switch (action.type) {
+    case "SET_CONFIG":
+      return action.payload;
+    case "UPDATE":
+      return { ...state, ...action.payload };
+    default:
+      return state;
+  }
 };
 
 const PointsCalculator: FC = () => {
-  const [state, dispatch] = useReducer(gameReducer, initialState);
+  const [config, configDispatch] = useReducer(configReducer, undefined, getInitialConfig);
+  const gameReducer = useMemo(() => createGameReducer(config), [config]);
+  const [state, dispatch] = useReducer(gameReducer, undefined, () => getInitialState(config));
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const controlsRef = useRef<GameControlsRef>(null);
+  const lastSavedState = useRef<string>("");
+  const lastSavedConfig = useRef<string>("");
+
+  const [showSettings, setShowSettings] = useState(false);
+
+  useEffect(() => {
+    const stateString = JSON.stringify(state);
+    if (stateString !== lastSavedState.current) {
+      lastSavedState.current = stateString;
+      localStorage.setItem(STORAGE_KEY, stateString);
+    }
+  }, [state]);
+
+  useEffect(() => {
+    const configString = JSON.stringify(config);
+    if (configString !== lastSavedConfig.current) {
+      lastSavedConfig.current = configString;
+      localStorage.setItem(CONFIG_KEY, configString);
+    }
+  }, [config]);
+
+  useEffect(() => {
+    if (state.finished && resultsRef.current) {
+      resultsRef.current.focus();
+    }
+  }, [state.finished]);
+
+  const handleConfigChange = useCallback((newConfig: Partial<GameConfig>) => {
+    configDispatch({ type: "UPDATE", payload: newConfig });
+  }, []);
 
   const handleChangeName = useCallback((id: number, name: string) => {
     dispatch({ type: "CHANGE_NAME", payload: { id, name } });
@@ -176,6 +262,9 @@ const PointsCalculator: FC = () => {
   }, []);
 
   const handleNewGame = useCallback(() => {
+    if (controlsRef.current) {
+      controlsRef.current.focus();
+    }
     dispatch({ type: "NEW_GAME" });
   }, []);
 
@@ -184,9 +273,45 @@ const PointsCalculator: FC = () => {
     [state.columns]
   );
 
+  const sortedColumns = useMemo(() => {
+    return [...state.columns].sort((a, b) => 
+      config.gameType === "highest" ? b.points - a.points : a.points - b.points
+    );
+  }, [state.columns, config.gameType]);
+
+  const winnerData = useMemo(() => {
+    const firstPlace = sortedColumns[0];
+    const winningPoints = firstPlace?.points ?? 0;
+    const winners = sortedColumns.filter(c => 
+      config.gameType === "highest" ? c.points === winningPoints : c.points === winningPoints
+    );
+    const isTie = winners.length > 1;
+    return {
+      winner: isTie ? config.messages.tie : firstPlace?.name ?? "",
+      pointsWinner: winningPoints,
+      tied: isTie ? winners : [],
+      otherColumns: sortedColumns.filter(c => !winners.includes(c)),
+    };
+  }, [sortedColumns, config.gameType, config.messages.tie]);
+
   return (
     <div className={styles.container}>
-      <div className="">
+      <button 
+        onClick={() => setShowSettings(!showSettings)}
+        className={styles.settings_toggle}
+        aria-expanded={showSettings}
+        aria-controls="settings-panel"
+      >
+        {showSettings ? "Hide Settings" : "Show Settings"}
+      </button>
+      
+      {showSettings && (
+        <div id="settings-panel">
+          <Settings config={config} onConfigChange={handleConfigChange} />
+        </div>
+      )}
+      
+      <div className={styles.columns_wrapper}>
         {state.columns.map((column) => (
           <ColumnComponent
             key={column.id}
@@ -195,23 +320,29 @@ const PointsCalculator: FC = () => {
             onChangeName={handleChangeName}
             onChangePoints={handleChangePoints}
             onRemoveColumn={handleRemoveColumn}
+            config={config}
           />
         ))}
       </div>
       <GameControls
+        ref={controlsRef}
         onAddColumn={handleAddColumn}
         onFinishGame={handleFinished}
         onNewGame={handleNewGame}
         finished={state.finished}
         allZeros={allZeros}
+        config={config}
       />
       {state.finished && (
-        <GameResults
-          winner={state.winner}
-          pointsWinner={state.pointsWinner}
-          tied={state.tied}
-          otherColumns={state.otherColumns}
-        />
+        <div ref={resultsRef} tabIndex={-1} aria-live="polite">
+          <GameResults
+            winner={winnerData.winner}
+            pointsWinner={winnerData.pointsWinner}
+            tied={winnerData.tied}
+            otherColumns={winnerData.otherColumns}
+            config={config}
+          />
+        </div>
       )}
     </div>
   );
