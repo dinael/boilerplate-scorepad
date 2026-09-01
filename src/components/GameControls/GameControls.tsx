@@ -9,7 +9,7 @@ export type GameControlsProps = {
   finished: boolean;
   allZeros: boolean;
   config: GameConfig;
-}
+};
 
 export interface GameControlsRef {
   focus: () => void;
@@ -17,18 +17,26 @@ export interface GameControlsRef {
 
 export const GameControls = memo(
   forwardRef<GameControlsRef, GameControlsProps>(
-    ({ onAddColumn, onFinishGame, onNewGame, finished, allZeros, config }, ref) => {
+    (
+      { onAddColumn, onFinishGame, onNewGame, finished, allZeros, config },
+      ref,
+    ) => {
       const containerRef = useRef<HTMLDivElement>(null);
-      
+
       useImperativeHandle(ref, () => ({
         focus: () => {
-          const firstButton = containerRef.current?.querySelector('button');
+          const firstButton = containerRef.current?.querySelector("button");
           firstButton?.focus();
-        }
+        },
       }));
 
       return (
-        <div ref={containerRef} className={styles.controls} role="group" aria-label="Game controls">
+        <div
+          ref={containerRef}
+          className={styles.controls}
+          role="group"
+          aria-label="Game controls"
+        >
           <button
             onClick={onAddColumn}
             className={`${styles.controls__btn} ${styles.controls__btn_add}`}
@@ -54,8 +62,8 @@ export const GameControls = memo(
           </button>
         </div>
       );
-    }
-  )
+    },
+  ),
 );
 
 export default GameControls;

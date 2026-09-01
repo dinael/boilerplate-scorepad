@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, fireEvent, screen } from "@testing-library/react";
 import PointsCalculator from "../PointsCalculator";
 import React from "react";
@@ -67,5 +67,14 @@ describe("PointsCalculator", () => {
     fireEvent.click(screen.getByText("New game"));
     expect(screen.getByText("Points: 0")).toBeInTheDocument();
     expect(screen.queryByText("Player 1 - 5 points")).not.toBeInTheDocument();
+  });
+
+  it("persists state and config under versioned storage keys", () => {
+    const setItem = vi.spyOn(window.localStorage, "setItem");
+    render(<PointsCalculator />);
+    fireEvent.change(screen.getAllByRole("spinbutton")[0], { target: { value: "5" } });
+    expect(setItem).toHaveBeenCalledWith("scorepad-game-state-v2", expect.any(String));
+    expect(setItem).toHaveBeenCalledWith("scorepad-game-config-v2", expect.any(String));
+    setItem.mockRestore();
   });
 });

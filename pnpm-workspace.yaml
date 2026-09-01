@@ -1,0 +1,6 @@
+allowBuilds:
+  '@parcel/watcher': true
+publicHoistPattern:
+  - '*@rolldown/*'
+minimumReleaseAgeExclude:
+  - globals@17.12.0

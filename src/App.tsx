@@ -1,19 +1,29 @@
-import { FC, lazy, Suspense } from 'react';
-import './App.css';
+import { FC, lazy, Suspense } from "react";
+import "./App.scss";
 
-const PointsCalculator = lazy(() => 
-  import('./components/PointsCalculator/PointsCalculator').then(m => ({ default: m.default }))
+const PointsCalculator = lazy(() =>
+  import("./components/PointsCalculator/PointsCalculator").then((m) => ({
+    default: m.default,
+  })),
 );
 
 const App: FC = () => {
   return (
     <div className="app-container">
-      <a href="#main-content" className="skip-link">Skip to main content</a>
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
       <header className="app-header">
         <h1>Scorepad</h1>
       </header>
       <main id="main-content" className="app-main">
-        <Suspense fallback={<div aria-live="polite" aria-busy="true">Loading...</div>}>
+        <Suspense
+          fallback={
+            <div aria-live="polite" aria-busy="true">
+              Loading...
+            </div>
+          }
+        >
           <PointsCalculator />
         </Suspense>
       </main>

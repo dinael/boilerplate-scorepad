@@ -162,4 +162,48 @@ describe("ColumnComponent", () => {
     const deleteBtn = screen.getByText("Delete column").closest("button") as HTMLButtonElement;
     expect(deleteBtn.disabled).toBe(true);
   });
+
+  it("uses stable input ids derived from the column and input ids", () => {
+    const column = createColumn();
+    const noop = () => {};
+
+    render(
+      <ColumnComponent
+        column={column}
+        finished={false}
+        onChangeName={noop}
+        onChangePoints={noop}
+        onRemoveColumn={noop}
+        config={defaultConfig}
+      />
+    );
+
+    const inputs = document.querySelectorAll('input[type="number"]');
+    expect(inputs[0].id).toBe("1-input-1");
+    expect(inputs[1].id).toBe("1-input-2");
+    expect(inputs[2].id).toBe("1-input-3");
+  });
+
+  it("calls onChangePoints with the input id when points change", () => {
+    const column = createColumn();
+    const calls: number[][] = [];
+    const onChangePoints = (columnId: number, inputId: number, value: number) => {
+      calls.push([columnId, inputId, value]);
+    };
+
+    render(
+      <ColumnComponent
+        column={column}
+        finished={false}
+        onChangeName={() => {}}
+        onChangePoints={onChangePoints}
+        onRemoveColumn={() => {}}
+        config={defaultConfig}
+      />
+    );
+
+    const inputs = document.querySelectorAll('input[type="number"]');
+    fireEvent.change(inputs[1], { target: { value: "7" } });
+    expect(calls).toContainEqual([1, 2, 7]);
+  });
 });

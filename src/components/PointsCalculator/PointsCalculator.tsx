@@ -9,9 +9,10 @@ import History from "../History/History";
 import UndoRedo from "../UndoRedo/UndoRedo";
 import { Input, GameState, GameAction, GameConfig, defaultConfig, Column, GameHistoryItem } from "../../types";
 
-const STORAGE_KEY = "scorepad-game-state";
-const CONFIG_KEY = "scorepad-game-config";
-const HISTORY_KEY = "scorepad-game-history";
+const STORAGE_VERSION = "v2";
+const STORAGE_KEY = `scorepad-game-state-${STORAGE_VERSION}`;
+const CONFIG_KEY = `scorepad-game-config-${STORAGE_VERSION}`;
+const HISTORY_KEY = `scorepad-game-history-${STORAGE_VERSION}`;
 const MAX_HISTORY = 50;
 
 const createInitialColumns = (config: GameConfig): Column[] => [
@@ -189,13 +190,14 @@ const createGameReducer = (config: GameConfig) => (state: GameState, action: Gam
       const winningPoints = sortedColumns[0]?.points ?? 0;
       const winners = sortedColumns.filter((column) => column.points === winningPoints);
       const isTie = winners.length > 1;
+      const winnerIds = new Set(winners.map((column) => column.id));
       return {
         ...state,
         finished: true,
         winner: isTie ? config.messages.tie : winners[0]?.name ?? "",
         pointsWinner: winners[0]?.points ?? 0,
         tied: isTie ? winners : [],
-        otherColumns: sortedColumns.filter((column) => !winners.includes(column)),
+        otherColumns: sortedColumns.filter((column) => !winnerIds.has(column.id)),
       };
     }
 
@@ -389,11 +391,12 @@ const PointsCalculator: FC = () => {
       config.gameType === "highest" ? c.points === winningPoints : c.points === winningPoints
     );
     const isTie = winners.length > 1;
+    const winnerIds = new Set(winners.map((column) => column.id));
     return {
       winner: isTie ? config.messages.tie : firstPlace?.name ?? "",
       pointsWinner: winningPoints,
       tied: isTie ? winners : [],
-      otherColumns: sortedColumns.filter(c => !winners.includes(c)),
+      otherColumns: sortedColumns.filter((c) => !winnerIds.has(c.id)),
     };
   }, [sortedColumns, config.gameType, config.messages.tie]);
 

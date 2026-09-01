@@ -1,7 +1,7 @@
 .history {
   background: var(--color-background, #f5f5f5);
   padding: 1rem;
-  border-radius: 8px;
+  border-radius: 0.5rem;
   margin-top: 1rem;
 }
 
@@ -36,8 +36,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  border: 0.0625rem solid #ddd;
+  border-radius: 0.375rem;
   margin-bottom: 0.5rem;
   background: white;
   flex-wrap: wrap;
@@ -78,11 +78,11 @@
 }
 
 .clearBtn {
-  padding: 4px 8px;
+  padding: 0.25rem 0.5rem;
   font-size: 0.75rem;
   background: transparent;
-  border: 1px solid #999;
-  border-radius: 4px;
+  border: 0.0625rem solid #999;
+  border-radius: 0.25rem;
   cursor: pointer;
   color: #666;
 
@@ -93,9 +93,9 @@
 
 .loadBtn,
 .deleteBtn {
-  padding: 4px 8px;
+  padding: 0.25rem 0.5rem;
   font-size: 0.75rem;
-  border-radius: 4px;
+  border-radius: 0.25rem;
   cursor: pointer;
 }
 

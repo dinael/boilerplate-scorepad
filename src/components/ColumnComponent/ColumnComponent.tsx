@@ -32,7 +32,7 @@ const InputField: FC<InputFieldProps> = memo(
         aria-label={label}
       />
     </div>
-  )
+  ),
 );
 
 interface ColumnComponentProps {
@@ -45,18 +45,25 @@ interface ColumnComponentProps {
 }
 
 export const ColumnComponent: FC<ColumnComponentProps> = memo(
-  ({ column, finished, onChangeName, onChangePoints, onRemoveColumn, config }) => {
+  ({
+    column,
+    finished,
+    onChangeName,
+    onChangePoints,
+    onRemoveColumn,
+    config,
+  }) => {
     const nameInputId = useId();
-    
+
     return (
-      <div 
-        key={column.id} 
-        className={styles.column} 
-        role="region" 
+      <div
+        key={column.id}
+        className={styles.column}
+        role="region"
         aria-labelledby={`${nameInputId}-label`}
       >
-        <label 
-          htmlFor={nameInputId} 
+        <label
+          htmlFor={nameInputId}
           id={`${nameInputId}-label`}
           className="visually-hidden"
         >
@@ -71,18 +78,18 @@ export const ColumnComponent: FC<ColumnComponentProps> = memo(
           readOnly={finished}
           aria-label={`${column.name} ${config.messages.playerName}`}
         />
-        {column.inputs.map((_, index) => (
+        {column.inputs.map((input) => (
           <InputField
-            key={index}
-            inputId={`${column.id}-input-${index}`}
-            value={column.inputs[index]?.value ?? 0}
-            onChange={(value) => onChangePoints(column.id, index + 1, value)}
+            key={input.id}
+            inputId={`${column.id}-input-${input.id}`}
+            value={input.value ?? 0}
+            onChange={(value) => onChangePoints(column.id, input.id, value)}
             readOnly={finished}
-            label={`${config.messages.round} ${index + 1} ${config.messages.points} for ${column.name}`}
+            label={`${config.messages.round} ${input.id} ${config.messages.points} for ${column.name}`}
           />
         ))}
-        <p 
-          className={styles.column__points_display} 
+        <p
+          className={styles.column__points_display}
           aria-live="polite"
           aria-atomic="true"
         >
@@ -98,7 +105,7 @@ export const ColumnComponent: FC<ColumnComponentProps> = memo(
         </button>
       </div>
     );
-  }
+  },
 );
 
 export default ColumnComponent;

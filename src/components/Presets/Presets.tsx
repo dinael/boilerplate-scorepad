@@ -115,24 +115,25 @@ export type PresetsProps = {
 
 export const Presets: FC<PresetsProps> = memo(({ onSelect, currentConfig }) => {
   return (
-    <div className={styles.presets} role="list" aria-label="Game presets">
+    <div className={styles.presets}>
       <h3 className={styles.title}>Presets</h3>
-      <div className={styles.grid}>
+      <ul className={styles.grid} aria-label="Game presets">
         {PRESETS.map((preset) => (
-          <button
-            key={preset.name}
-            onClick={() => onSelect(preset.config)}
-            className={styles.preset}
-            aria-label={`Load ${preset.name} preset: ${preset.description || ""}`}
-            title={preset.description}
-          >
-            <span className={styles.name}>{preset.name}</span>
-            {preset.description && (
-              <span className={styles.desc}>{preset.description}</span>
-            )}
-          </button>
+          <li key={preset.name}>
+            <button
+              onClick={() => onSelect(preset.config)}
+              className={styles.preset}
+              aria-label={`Load ${preset.name} preset: ${preset.description || ""}`}
+              title={preset.description}
+            >
+              <span className={styles.name}>{preset.name}</span>
+              {preset.description && (
+                <span className={styles.desc}>{preset.description}</span>
+              )}
+            </button>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 });

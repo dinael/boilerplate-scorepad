@@ -8,14 +8,19 @@ export type GameResultsProps = {
   tied: Column[];
   otherColumns: Column[];
   config: GameConfig;
-}
+};
 
 export const GameResults: FC<GameResultsProps> = memo(
   ({ winner, pointsWinner, tied, otherColumns, config }) => (
-    <div className={styles.results} role="region" aria-labelledby="results-heading">
+    <div
+      className={styles.results}
+      role="region"
+      aria-labelledby="results-heading"
+    >
       <h2 id="results-heading">{config.messages.winner}</h2>
       <p className={styles.results__winner} role="status">
-        {winner} {pointsWinner > 0 && `- ${pointsWinner} ${config.messages.points}`}
+        {winner}{" "}
+        {pointsWinner > 0 && `- ${pointsWinner} ${config.messages.points}`}
       </p>
       {tied.length > 0 && (
         <section aria-labelledby="tied-heading">
@@ -42,7 +47,7 @@ export const GameResults: FC<GameResultsProps> = memo(
         </section>
       )}
     </div>
-  )
+  ),
 );
 
 export default GameResults;
