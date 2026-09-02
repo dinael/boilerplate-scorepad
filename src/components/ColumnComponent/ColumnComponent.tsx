@@ -1,4 +1,4 @@
-import React, { FC, memo, useId } from "react";
+import React, { FC, memo, useCallback, useMemo, useId } from "react";
 import { Column, GameConfig } from "../../types";
 import styles from "./ColumnComponent.module.scss";
 
@@ -23,8 +23,10 @@ const InputField: FC<InputFieldProps> = memo(
         min={0}
         onChange={(e) => {
           const val = parseInt(e.target.value, 10);
-          if (!isNaN(val) && val >= 0) {
-            onChange(val);
+          if (!isNaN(val)) {
+            if (val >= 0 && val <= Number.MAX_SAFE_INTEGER) {
+              onChange(val);
+            }
           }
         }}
         className={styles.column__points_input}
@@ -55,6 +57,19 @@ export const ColumnComponent: FC<ColumnComponentProps> = memo(
   }) => {
     const nameInputId = useId();
 
+    const handleNameChange = useCallback(
+      (e: React.ChangeEvent<HTMLInputElement>) => onChangeName(column.id, e.target.value),
+      [column.id, onChangeName],
+    );
+
+    const handlePointsChange = useMemo(() => {
+      const handlers = new Map<number, (value: number) => void>();
+      for (const input of column.inputs) {
+        handlers.set(input.id, (value: number) => onChangePoints(column.id, input.id, value));
+      }
+      return handlers;
+    }, [column.id, column.inputs, onChangePoints]);
+
     return (
       <div
         key={column.id}
@@ -73,7 +88,7 @@ export const ColumnComponent: FC<ColumnComponentProps> = memo(
           id={nameInputId}
           type="text"
           value={column.name}
-          onChange={(e) => onChangeName(column.id, e.target.value)}
+          onChange={handleNameChange}
           className={styles.column__name_input}
           readOnly={finished}
           aria-label={`${column.name} ${config.messages.playerName}`}
@@ -83,7 +98,7 @@ export const ColumnComponent: FC<ColumnComponentProps> = memo(
             key={input.id}
             inputId={`${column.id}-input-${input.id}`}
             value={input.value ?? 0}
-            onChange={(value) => onChangePoints(column.id, input.id, value)}
+            onChange={handlePointsChange.get(input.id)!}
             readOnly={finished}
             label={`${config.messages.round} ${input.id} ${config.messages.points} for ${column.name}`}
           />

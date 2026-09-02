@@ -275,7 +275,7 @@ const PointsCalculator: FC = () => {
       saveToHistory(state, config);
       setHistory(getHistory());
     }
-  }, [state.finished]);
+  }, [state, state.finished, config]);
 
   const handleConfigChange = useCallback((newConfig: Partial<GameConfig>) => {
     configDispatch({ type: "UPDATE", payload: newConfig });
